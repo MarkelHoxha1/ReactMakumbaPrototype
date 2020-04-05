@@ -1,0 +1,26 @@
+<html lang="en">
+<!-- 
+This folder is NOT used in stackblitz
+
+To use mak-react with JSX locally from file:// in Firefox (or serve from a local http server, use any recent browser) :
+1) replace index.html with this file in the project dir
+2) download babel 6.26, react 16.3, react-dom 16.3 and place them in a lib/ dir
+3) copy loader.js in the lib/ dir
+4) specify the first JSX file to be loaded in the data-load attribute of the loader.js script 
+
+TODO: JSX source mapping does not show in the Firefox debugger. It works in Chrome though (but for Chrome you need a simple local server)
+-->
+<head>
+  <meta charset="UTF-8">
+  <title>React Local</title>
+  <script src="lib/babel.js"></script>
+  <script src="lib/react.development.js"></script>
+  <script src="lib/react-dom.development.js"></script>
+ 
+  <script src="lib/loader.js"  data-load="index.js" ></script>
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
+</html>
