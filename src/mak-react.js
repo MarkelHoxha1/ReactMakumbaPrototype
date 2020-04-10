@@ -154,7 +154,8 @@ export class List extends React.Component {
 
 
   runQueries() {
-    console.log(this.queries)
+    console.log(this.queries);
+    console.log("Server => " + this.server);
     fetch(this.server, {
       method: "POST",
       credentials: 'include',
