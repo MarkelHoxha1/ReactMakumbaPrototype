@@ -15,7 +15,30 @@ class FetchApproach extends Component {
 
   processQuery(query)
   {
-    return new Object();
+    // control 'From' word
+    // control 'Where' word
+    // control 'map' word if yes create new object
+    // switch(word)
+    // {
+    //   case "from": 
+    //   //operation 
+    //   break;
+    // }
+    return [
+        {
+          projections: ["line.name"],
+          querySections: ["ProductionLine line", "1 = 1", null, null, null, null, null],
+          parentIndex: -1,
+          limit: -1,
+          offset: 0
+         },
+        {
+          projections: ["task.days", "task.customer","task.endDate", "task.startDate"],
+          querySections: ["Task task", "task.line=line", null, null, null, null, null],
+          parentIndex: 0,
+          limit: -1,
+          offset: 0
+        }];
   }
 
   escapeRegExp(string) {
@@ -32,11 +55,27 @@ class FetchApproach extends Component {
     //     limit: -1,
     //     offset: 0
     // }];
-    var query = 'from("Courses c").where("c=$course").map( data=> ( /*expression*/ { /*new object */ '+
-      'name: data("c.name"), // object { key1:value1, key2, value2}' + 
-      'students: data.from("c.students s").map(data=> ({name: data("s.name"), '+
-      'grade: data("s.grade"), courseNumber: data("c.number")}) })  // end of object and expression )// end of map()';
+    var query = 'from("ProductionLine line").where("1 == 1").map( data=> ( /*expression*/ { /*new object */ '+
+      'name: data("line.name"), // object { key1:value1, key2, value2}' + 
+      'students: data.from("line.Task task").map(data=> ({name: data("task.days"), '+
+      'grade: data("task.customer"), courseNumber: data("task.endDate")}) })  // end of object and expression )// end of map()';
     
+
+    // var dataToBeSent = [
+    //   {
+    //     projections: ["line.name"],
+    //     querySections: ["ProductionLine line", "1 = 1", null, null, null, null, null],
+    //     parentIndex: -1,
+    //     limit: -1,
+    //     offset: 0
+    //    },
+    //   {
+    //     projections: ["task.days", "task.customer","task.endDate"],
+    //     querySections: ["Task task", "task.line=line", null, null, null, null, null],
+    //     parentIndex: 0,
+    //     limit: -1,
+    //     offset: 0
+    //   }];
     query = this.escapeRegExp(query);
 
     console.log("Query after removing comments => "+ query);
