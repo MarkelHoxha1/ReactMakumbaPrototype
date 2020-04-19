@@ -13,6 +13,35 @@ class FetchApproach extends Component {
     };
   }
 
+  controlFromClause(query){
+      var querySection = '';
+      var obj = new Object();
+      if(query.indexOf("from") !== -1)
+      {
+        querySection = query.substr(query.indexOf("from") + 5, query.indexOf(")") - 5);
+        obj.querySections = [];
+        obj.querySections.push(querySection);
+        obj.querySections.push(this.controlWhereClause(query.substr(query.indexOf(")") + 2)));
+      }
+      return obj;
+
+  }
+
+  returnFromClause(query){
+    return query.substr(query.indexOf("from") + 6, query.indexOf(")") - 6);
+  }
+
+  controlWhereClause(query){
+    var queryWhereSection = '';
+    if(query.indexOf("where") !== -1)
+    {
+      queryWhereSection = query.substr(6, query.indexOf(")") - 5);
+      return queryWhereSection;
+    }
+    else
+    return "1 == 1";
+  }
+
   processQuery(query)
   {
     // control 'From' word
@@ -24,6 +53,14 @@ class FetchApproach extends Component {
     //   //operation 
     //   break;
     // }
+    var arrayToBeReturned = [];
+    var querySplitted = query.split('.map'); //splitting by map
+    querySplitted.map((element)=>{
+      if(element.indexOf("from") !== -1) {
+        this.returnFromClause(element); //interpreting from clause
+      }
+      this.controlFromClause(element);
+    });
     return [
         {
           projections: ["line.name"],
@@ -80,7 +117,7 @@ class FetchApproach extends Component {
 
     console.log("Query after removing comments => "+ query);
     
-    var dataToBeSent = this.processQuery();
+    var dataToBeSent = this.processQuery(query);
 
     fetch(API, {
         method: "POST",
