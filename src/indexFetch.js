@@ -27,10 +27,6 @@ class FetchApproach extends Component {
 
   }
 
-  returnFromClause(query){
-    return query.substr(query.indexOf("from") + 6, query.indexOf(")") - 6);
-  }
-
   controlWhereClause(query){
     var queryWhereSection = '';
     if(query.indexOf("where") !== -1)
@@ -42,24 +38,62 @@ class FetchApproach extends Component {
     return "1 == 1";
   }
 
+  returnFromClause(query){
+    return query.substr(query.indexOf("(") + 2, query.indexOf(")") - 3);
+  }
+
+  returnWhereClause(query){
+    var queryWhereSection = '';
+    if(query.indexOf("where") !== -1)
+    {
+      queryWhereSection = query.substr(query.indexOf("(") + 2, query.indexOf(")") - 8);
+      return queryWhereSection;
+    }
+    else
+    return "1 == 1";
+  }
+
+  returnSelectClause(query)
+  {
+    var keywordSearching = '';
+    var stringContainsMapAndKeyWord = query.substr(0, query.indexOf("=>"));
+    stringContainsMapAndKeyWord = stringContainsMapAndKeyWord.replace(/\s/g,'');
+    keywordSearching = stringContainsMapAndKeyWord.substr(stringContainsMapAndKeyWord.indexOf("(") + 1);
+    
+    return query;
+  }
+
   processQuery(query)
   {
-    // control 'From' word
-    // control 'Where' word
-    // control 'map' word if yes create new object
-    // switch(word)
-    // {
-    //   case "from": 
-    //   //operation 
-    //   break;
-    // }
+    var index = -1;
     var arrayToBeReturned = [];
-    var querySplitted = query.split('.map'); //splitting by map
-    querySplitted.map((element)=>{
-      if(element.indexOf("from") !== -1) {
-        this.returnFromClause(element); //interpreting from clause
+    var queryWithoutWherePart = '';
+    //var querySplitted = query.split('.map'); //splitting by map
+    var querySplittedFrom = query.split('from');
+    querySplittedFrom.map((element)=>{
+      if(element !== '') {
+        var fromClause = this.returnFromClause(element); //interpreting from clause
+        //process from Clause if is formed with . 
+        var queryWithoutFromPart = element.substr(element.indexOf(")") + 2);
+        var whereClause = this.returnWhereClause(queryWithoutFromPart);
+        if(queryWithoutFromPart.indexOf("where") !== -1){
+          queryWithoutWherePart = queryWithoutFromPart.substr(queryWithoutFromPart.indexOf(")") + 2);
+        }
+        else{
+          queryWithoutWherePart = queryWithoutFromPart;
+        }
+        
+        var selectClause = this.returnSelectClause(queryWithoutWherePart);
+        arrayToBeReturned.push({
+          projections: [selectClause],
+          querySections: [fromClause, whereClause, null,null,null,null, null],
+          parentIndex: index,
+          limit: -1,
+          offset: 0
+        });
+        index++;
       }
-      this.controlFromClause(element);
+      //this.controlFromClause(element);
     });
     return [
         {
