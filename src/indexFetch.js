@@ -38,6 +38,23 @@ class FetchApproach extends Component {
     return "1 == 1";
   }
 
+  getIndicesOf(searchStr, str, caseSensitive) {
+    var searchStrLen = searchStr.length;
+    if (searchStrLen == 0) {
+        return [];
+    }
+    var startIndex = 0, index, indices = [];
+    if (!caseSensitive) {
+        str = str.toLowerCase();
+        searchStr = searchStr.toLowerCase();
+    }
+    while ((index = str.indexOf(searchStr, startIndex)) > -1) {
+        indices.push(index);
+        startIndex = index + searchStrLen;
+    }
+    return indices;
+}
+
   returnFromClause(query){
     return query.substr(query.indexOf("(") + 2, query.indexOf(")") - 3);
   }
@@ -59,8 +76,20 @@ class FetchApproach extends Component {
     var stringContainsMapAndKeyWord = query.substr(0, query.indexOf("=>"));
     stringContainsMapAndKeyWord = stringContainsMapAndKeyWord.replace(/\s/g,'');
     keywordSearching = stringContainsMapAndKeyWord.substr(stringContainsMapAndKeyWord.indexOf("(") + 1);
-    
-    return query;
+    var arrayProjections = [];
+    var indexes = this.getIndicesOf(keywordSearching + "(", query);
+
+    for(var i of indexes)
+    {
+      arrayProjections.push(this.processMapKeyword(query, i));
+    }
+    return arrayProjections;
+  }
+
+  processMapKeyword(query, index)
+  {
+    query = query.substr(index);
+    return query.substring( 6, query.indexOf(")") - 1);
   }
 
   processQuery(query)
@@ -85,7 +114,7 @@ class FetchApproach extends Component {
         
         var selectClause = this.returnSelectClause(queryWithoutWherePart);
         arrayToBeReturned.push({
-          projections: [selectClause],
+          projections: selectClause,
           querySections: [fromClause, whereClause, null,null,null,null, null],
           parentIndex: index,
           limit: -1,
@@ -93,9 +122,53 @@ class FetchApproach extends Component {
         });
         index++;
       }
-      //this.controlFromClause(element);
     });
-    return [
+
+     //replace from and where clause
+     for(var element of arrayToBeReturned)
+     {
+        if(element.querySections[0].indexOf('.') !== -1)
+        {
+          //was line.Task task
+          var newObject = element.querySections[0].split(' ')[1]; //task
+          var newProperty = element.querySections[0].split('.')[0]; //line
+          element.querySections[0] = element.querySections[0].split('.')[1]; //Task task
+          element.querySections[1] = newObject+'.'+ newProperty +'='+newProperty;
+          //now is Task task , task.line = line
+        }
+     }
+  return arrayToBeReturned;
+    // return [
+    //     {
+    //       projections: ["line.name"],
+    //       querySections: ["ProductionLine line", "1 = 1", null, null, null, null, null],
+    //       parentIndex: -1,
+    //       limit: -1,
+    //       offset: 0
+    //      },
+    //     {
+    //       projections: ["task.days", "task.customer","task.endDate", "task.startDate"],
+    //       querySections: ["Task task", "task.line=line", null, null, null, null, null],
+    //       parentIndex: 0,
+    //       limit: -1,
+    //       offset: 0
+    //     }];
+  }
+
+  escapeRegExp(string) {
+    return string.replace(/(\/\*[\w\'\s\r\n\*]*\*\/)|(\/\/[\w\s\']*)|(\<![\-\-\s\w\>\/]*\>)/g, ' '); // $& means the whole matched string
+  }
+
+  componentDidMount() {
+    this.setState({ isLoading: true });
+
+    var query = 'from("ProductionLine line").where("1 = 1").map( data=> ( /*expression*/ { /*new object */ '+
+      'name: data("line.name"), // object { key1:value1, key2, value2}' + 
+      'students: data.from("line.Task task").map(data=> ({name: data("task.days"), '+
+      'grade: data("task.customer"), courseNumber: data("task.endDate")}) })  // end of object and expression )// end of map()';
+    
+
+    var dataToBeSent = [
         {
           projections: ["line.name"],
           querySections: ["ProductionLine line", "1 = 1", null, null, null, null, null],
@@ -110,53 +183,19 @@ class FetchApproach extends Component {
           limit: -1,
           offset: 0
         }];
-  }
-
-  escapeRegExp(string) {
-    return string.replace(/(\/\*[\w\'\s\r\n\*]*\*\/)|(\/\/[\w\s\']*)|(\<![\-\-\s\w\>\/]*\>)/g, ' '); // $& means the whole matched string
-  }
-
-  componentDidMount() {
-    this.setState({ isLoading: true });
-
-    // var dataToBeSent = [{
-    //     projections: ["c.name"],
-    //     querySections: ["Courses c", undefined, null, null, null, null, null],
-    //     parentIndex: -1,
-    //     limit: -1,
-    //     offset: 0
-    // }];
-    var query = 'from("ProductionLine line").where("1 == 1").map( data=> ( /*expression*/ { /*new object */ '+
-      'name: data("line.name"), // object { key1:value1, key2, value2}' + 
-      'students: data.from("line.Task task").map(data=> ({name: data("task.days"), '+
-      'grade: data("task.customer"), courseNumber: data("task.endDate")}) })  // end of object and expression )// end of map()';
-    
-
-    // var dataToBeSent = [
-    //   {
-    //     projections: ["line.name"],
-    //     querySections: ["ProductionLine line", "1 = 1", null, null, null, null, null],
-    //     parentIndex: -1,
-    //     limit: -1,
-    //     offset: 0
-    //    },
-    //   {
-    //     projections: ["task.days", "task.customer","task.endDate"],
-    //     querySections: ["Task task", "task.line=line", null, null, null, null, null],
-    //     parentIndex: 0,
-    //     limit: -1,
-    //     offset: 0
-    //   }];
     query = this.escapeRegExp(query);
 
     console.log("Query after removing comments => "+ query);
     
-    var dataToBeSent = this.processQuery(query);
+    var dataReturned = this.processQuery(query);
+
+    // console.log(dataToBeSent);
+    // console.log(dataReturned);
 
     fetch(API, {
         method: "POST",
         credentials: 'include',
-        body: "request=" + encodeURIComponent(JSON.stringify({ queries: dataToBeSent })) + "&analyzeOnly=false"
+        body: "request=" + encodeURIComponent(JSON.stringify({ queries: dataReturned })) + "&analyzeOnly=false"
       })
       .then(response => {
           console.log(response);
