@@ -165,24 +165,9 @@ class FetchApproach extends Component {
     var query = 'from("ProductionLine line").where("1 = 1").map( data=> ( /*expression*/ { /*new object */ '+
       'name: data("line.name"), // object { key1:value1, key2, value2}' + 
       'students: data.from("line.Task task").map(data=> ({name: data("task.days"), '+
-      'grade: data("task.customer"), courseNumber: data("task.endDate")}) })  // end of object and expression )// end of map()';
+      'grade: data("task.customer"), courseNumber: data("task.endDate"), test: data("task.startDate")}) })  // end of object and expression )// end of map()';
     
 
-    var dataToBeSent = [
-        {
-          projections: ["line.name"],
-          querySections: ["ProductionLine line", "1 = 1", null, null, null, null, null],
-          parentIndex: -1,
-          limit: -1,
-          offset: 0
-         },
-        {
-          projections: ["task.days", "task.customer","task.endDate", "task.startDate"],
-          querySections: ["Task task", "task.line=line", null, null, null, null, null],
-          parentIndex: 0,
-          limit: -1,
-          offset: 0
-        }];
     query = this.escapeRegExp(query);
 
     console.log("Query after removing comments => "+ query);
@@ -190,7 +175,7 @@ class FetchApproach extends Component {
     var dataReturned = this.processQuery(query);
 
     // console.log(dataToBeSent);
-    // console.log(dataReturned);
+     console.log(dataReturned);
 
     fetch(API, {
         method: "POST",
